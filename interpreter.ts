@@ -10,7 +10,7 @@ class Token {
     }
 }
 
-class Interpreter {
+export class Interpreter {
     text: string
     pos: number
     currentToken: Token

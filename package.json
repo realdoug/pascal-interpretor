@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "alsatian './test/**/*.test.js'"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^9.6.5"
+    "@types/node": "^9.6.5",
+    "alsatian": "^2.2.1"
   }
 }
