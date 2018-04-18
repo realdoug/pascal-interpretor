@@ -1,4 +1,6 @@
-const [INTEGER, PLUS, EOF] = ['INTEGER', 'PLUS', 'EOF'];
+import { setFlagsFromString } from "v8";
+
+const [INTEGER, PLUS, MINUS, EOF] = ['INTEGER', 'PLUS', 'MINUS', 'EOF'];
 const nums = '0123456789';
 
 class Token {
@@ -14,40 +16,71 @@ export class Interpreter {
     text: string
     pos: number
     currentToken: Token
+    currentChar: string // no char type in ts :(
 
     constructor(text: string) {
         this.text = text
         this.pos = 0
         this.currentToken = null
+        this.currentChar = this.text[this.pos]
     }
 
     error() {
-        throw "Error"
+        throw "Parse Error"
+    }
+
+    advance() {
+        this.pos += 1
+        if (this.pos > this.text.length - 1) {
+            this.currentChar = null
+        } else {
+            this.currentChar = this.text[this.pos]
+        }
+    }
+
+    skipWhitespace() {
+        while (this.currentChar === ' ') {
+            this.advance()
+        }
+    }
+
+    integer(): number {
+        let result = ''
+        while (this.currentChar !== null && !isNaN(parseInt(this.currentChar))) {
+            result += this.currentChar
+            this.advance()
+        }
+        return parseInt(result)
     }
 
     getNextToken(): Token {
-        const text = this.text
-        if (this.pos > text.length - 1)
-            return new Token(EOF, null)
+        while (this.currentChar !== null) {
+            if (this.currentChar === ' ') {
+                this.skipWhitespace()
+                continue
+            }
+            if (!isNaN(parseInt(this.currentChar))) {
+                return new Token(INTEGER, this.integer());
+            }
+            if (this.currentChar === '+') {
+                this.advance()
+                return new Token(PLUS, '+')
+            }
+            if (this.currentChar == '-') {
+                this.advance()
+                return new Token(MINUS, '-')
+            }
 
-        let currentChar = text[this.pos]
-        if (nums.indexOf(currentChar) !== -1) {
-            this.pos += 1
-            return new Token(INTEGER, parseInt(currentChar))
+            this.error()
         }
-
-        if (currentChar === '+') {
-            this.pos += 1
-            return new Token(PLUS, currentChar)
-        }
-
-        this.error()
+        
+        return new Token(EOF, null)
     }
 
     eat(tokenType: string) {
-        if(this.currentToken.type === tokenType){
+        if (this.currentToken.type === tokenType) {
             this.currentToken = this.getNextToken()
-        }else {
+        } else {
             this.error()
         }
     }
@@ -58,12 +91,20 @@ export class Interpreter {
         this.eat(INTEGER)
 
         const op = this.currentToken
-        this.eat(PLUS)
-        
+        if(op.type === PLUS){
+            this.eat(PLUS)
+        }else {
+            this.eat(MINUS)
+        }
+
         const right = this.currentToken
         this.eat(INTEGER)
 
-        return left.value + right.value
+        if(op.type === PLUS){
+            return left.value + right.value
+        }else{
+            return left.value - right.value
+        }
     }
 }
 
