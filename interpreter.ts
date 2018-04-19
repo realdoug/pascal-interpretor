@@ -1,7 +1,4 @@
-import { setFlagsFromString } from "v8";
-
-const [INTEGER, PLUS, MINUS, EOF] = ['INTEGER', 'PLUS', 'MINUS', 'EOF'];
-const nums = '0123456789';
+const [INTEGER, PLUS, MINUS, MUL, DIV, EOF] = ['INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'EOF'];
 
 class Token {
     type: string
@@ -12,21 +9,15 @@ class Token {
     }
 }
 
-export class Interpreter {
+export class Lexer {
     text: string
     pos: number
-    currentToken: Token
     currentChar: string // no char type in ts :(
 
     constructor(text: string) {
         this.text = text
         this.pos = 0
-        this.currentToken = null
         this.currentChar = this.text[this.pos]
-    }
-
-    error() {
-        throw "Parse Error"
     }
 
     advance() {
@@ -53,6 +44,10 @@ export class Interpreter {
         return parseInt(result)
     }
 
+    error() {
+        throw "Invalid Character"
+    }
+
     getNextToken(): Token {
         while (this.currentChar !== null) {
             if (this.currentChar === ' ') {
@@ -70,41 +65,84 @@ export class Interpreter {
                 this.advance()
                 return new Token(MINUS, '-')
             }
+            if (this.currentChar === '*') {
+                this.advance()
+                return new Token(MUL, '*')
+            }
+            if (this.currentChar == '/') {
+                this.advance()
+                return new Token(DIV, '/')
+            }
 
             this.error()
         }
-        
+
         return new Token(EOF, null)
+    }
+}
+
+export class Interpreter {
+    currentToken: Token
+    lexer: Lexer
+
+    constructor(lexer: Lexer) {
+        this.lexer = lexer
+        this.currentToken = this.lexer.getNextToken()
+    }
+
+    error() {
+        throw "Parse Error"
     }
 
     eat(tokenType: string) {
         if (this.currentToken.type === tokenType) {
-            this.currentToken = this.getNextToken()
+            this.currentToken = this.lexer.getNextToken()
         } else {
             this.error()
         }
     }
 
-    expr() {
-        this.currentToken = this.getNextToken()
-        const left = this.currentToken
+    factor() {
+        // factor :  INTEGER
+        const token = this.currentToken
         this.eat(INTEGER)
+        return token.value
+    }
 
-        const op = this.currentToken
-        if(op.type === PLUS){
-            this.eat(PLUS)
-        }else {
-            this.eat(MINUS)
+    term(): number {
+        // term : factor ((MUL | DIV) factor)*
+        let result = this.factor()
+
+        while ([MUL, DIV].indexOf(this.currentToken.type) > -1) {
+            const token = this.currentToken
+            if (token.type === MUL) {
+                this.eat(MUL)
+                result = result * this.factor()
+            } else if (token.type === DIV) {
+                this.eat(DIV)
+                result = result / this.factor()
+            }
         }
 
-        const right = this.currentToken
-        this.eat(INTEGER)
+        return result
+    }
 
-        if(op.type === PLUS){
-            return left.value + right.value
-        }else{
-            return left.value - right.value
+
+    expr(): number {
+        // expr : term ((PLUS | MINUS) term)*
+
+        let result = this.term()
+        while ([PLUS, MINUS].indexOf(this.currentToken.type) > -1) {
+            const token = this.currentToken
+            if (token.type === PLUS) {
+                this.eat(PLUS)
+                result = result + this.term()
+            } else if (token.type === MINUS) {
+                this.eat(MINUS)
+                result = result - this.term()
+            }
         }
+        return result
     }
 }
 
@@ -118,7 +156,8 @@ function main() {
     rl.setPrompt('calc> ')
     rl.prompt()
     rl.on('line', (inp) => {
-        const interpreter = new Interpreter(inp)
+        const lexer = new Lexer(inp)
+        const interpreter = new Interpreter(lexer)
         const result = interpreter.expr()
 
         console.log(result)

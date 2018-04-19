@@ -1,12 +1,11 @@
 import { Expect, Test } from "alsatian"
-import { Interpreter } from "../interpreter"
+import { Lexer } from "../interpreter"
 
 export class InterpreterFixture {
-
   @Test()
   public IntegerTest() {
-    const interpreter = new Interpreter("1000")
-    const result = interpreter.integer()
+    const lex = new Lexer("1000")
+    const result = lex.integer()
 
     Expect(result).toBe(1000);
   }
