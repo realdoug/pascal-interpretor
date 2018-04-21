@@ -1,77 +1,47 @@
 import Token, {
-    INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF
+    INTEGER, PLUS, MINUS, MUL, DIV, EOF
 } from './token'
 import Lexer from './lexer'
+import Parser from './parser'
+import { ASTNode, BinaryOp, Num } from './ast'
 
 export default class Interpreter {
-    currentToken: Token
-    lexer: Lexer
+    parser: Parser
 
-    constructor(lexer: Lexer) {
-        this.lexer = lexer
-        this.currentToken = this.lexer.getNextToken()
+    constructor(parser: Parser) {
+        this.parser = parser
     }
 
-    error() {
-        throw "Parse Error"
-    }
-
-    eat(tokenType: string) {
-        if (this.currentToken.type === tokenType) {
-            this.currentToken = this.lexer.getNextToken()
+    visit(node: ASTNode) {
+        const methodName = 'visit_' + node.constructor.name
+        const specificVisit = this[methodName].bind(this)
+        if (specificVisit !== undefined) {
+            return specificVisit(node)
         } else {
-            this.error()
+            throw `No method implemented: ${methodName}`
         }
     }
 
-    factor() {
-        // factor :  INTEGER | LPAREN expr RPAREN
-        const token = this.currentToken
-        switch(token.type) {
-            case INTEGER:
-                this.eat(INTEGER)
-                return token.value
-            case LPAREN:
-                this.eat(LPAREN)
-                const result = this.expr()
-                this.eat(RPAREN)
-                return result
+    visit_BinaryOp(node: BinaryOp) {
+        const visit = this.visit.bind(this) // sad sad javascript
+        switch (node.op.type) {
+            case PLUS:
+                return visit(node.left) + visit(node.right)
+            case MINUS:
+                return visit(node.left) - visit(node.right)
+            case MUL:
+                return visit(node.left) * visit(node.right)
+            case DIV:
+                return visit(node.left) / visit(node.right)
         }
     }
 
-    term(): number {
-        // term : factor ((MUL | DIV) factor)*
-        let result = this.factor()
-
-        while ([MUL, DIV].indexOf(this.currentToken.type) > -1) {
-            const token = this.currentToken
-            if (token.type === MUL) {
-                this.eat(MUL)
-                result = result * this.factor()
-            } else if (token.type === DIV) {
-                this.eat(DIV)
-                result = result / this.factor()
-            }
-        }
-
-        return result
+    visit_Num(node: Num) {
+        return node.value
     }
 
-
-    expr(): number {
-        // expr : term ((PLUS | MINUS) term)*
-
-        let result = this.term()
-        while ([PLUS, MINUS].indexOf(this.currentToken.type) > -1) {
-            const token = this.currentToken
-            if (token.type === PLUS) {
-                this.eat(PLUS)
-                result = result + this.term()
-            } else if (token.type === MINUS) {
-                this.eat(MINUS)
-                result = result - this.term()
-            }
-        }
-        return result
+    run(): number {
+        const tree = this.parser.parse()
+        return this.visit(tree)
     }
 }

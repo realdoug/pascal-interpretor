@@ -1,5 +1,6 @@
 import Interpreter from './src/interpreter'
 import Lexer from './src/lexer'
+import Parser from './src/parser'
 
 function main() {
     const readline = require('readline');
@@ -12,8 +13,9 @@ function main() {
     rl.prompt()
     rl.on('line', (inp) => {
         const lexer = new Lexer(inp)
-        const interpreter = new Interpreter(lexer)
-        const result = interpreter.expr()
+        const parser = new Parser(lexer)
+        const interpreter = new Interpreter(parser)
+        const result = interpreter.run()
 
         console.log(result)
         rl.prompt()
