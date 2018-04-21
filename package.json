@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "alsatian './test/**/*.test.js'"
+    "test": "alsatian './test/**/*.test.js'",
+    "clean": "rm -r src/*.js src/*.map test/*.js test/*.map"
   },
   "keywords": [],
   "author": "",

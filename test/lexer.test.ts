@@ -1,5 +1,5 @@
 import { Expect, Test } from "alsatian"
-import { Lexer } from "../interpreter"
+import Lexer from "../src/lexer"
 
 export class InterpreterFixture {
   @Test()

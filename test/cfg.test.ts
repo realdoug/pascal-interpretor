@@ -1,5 +1,6 @@
 import { Expect, Test } from "alsatian"
-import { Lexer, Interpreter } from "../interpreter"
+import Lexer from '../src/lexer'
+import Interpreter from "../src/interpreter"
 
 const expr = statement => {
   const lex = new Lexer(statement)
@@ -29,8 +30,13 @@ export class ExprFixture {
   }
 
   @Test()
-  public FactorTest() {
+  public FactorSimpleTest() {
     Expect(expr("100")).toBe(100)
+  }
+
+  @Test()
+  public FactorParenTest() {
+    Expect(expr("(1 + 8) * 100")).toBe(900)
   }
 
   @Test()
@@ -42,4 +48,8 @@ export class ExprFixture {
   public ExprTest() {
     Expect(expr("31 + 100 * 9")).toBe(931)
   }
-}
+
+  @Test()
+  public ComplexTest() {
+    Expect(expr("(20 - 10) + 9 * 10")).toBe(100)
+  }}
