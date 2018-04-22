@@ -55,4 +55,10 @@ export class ExprFixture {
   @Test()
   public ComplexTest() {
     Expect(expr("(20 - 10) + 9 * 10")).toBe(100)
-  }}
+  }
+
+  @Test()
+  public UnaryTest() {
+    Expect(expr("+-1")).toBe(-1)
+  }
+}

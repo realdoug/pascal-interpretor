@@ -3,7 +3,7 @@ import Token, {
 } from './token'
 import Lexer from './lexer'
 import Parser from './parser'
-import { ASTNode, BinaryOp, Num } from './ast'
+import { ASTNode, BinaryOp, UnaryOp, Num } from './ast'
 
 export default class Interpreter {
     parser: Parser
@@ -19,6 +19,17 @@ export default class Interpreter {
             return specificVisit(node)
         } else {
             throw `No method implemented: ${methodName}`
+        }
+    }
+
+    visit_UnaryOp(node: UnaryOp) {
+        const visit = this.visit.bind(this)
+        const op = node.op.type
+        switch (node.op.type) {
+            case PLUS:
+                return +visit(node.expr)
+            case MINUS:
+                return -visit(node.expr)
         }
     }
 

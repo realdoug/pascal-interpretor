@@ -2,7 +2,7 @@ import Token, {
     INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF
 } from './token'
 import Lexer from './lexer'
-import { Num, BinaryOp, ASTNode } from './ast';
+import { Num, BinaryOp, ASTNode, UnaryOp } from './ast';
 
 export default class Parser {
     currentToken: Token
@@ -26,9 +26,15 @@ export default class Parser {
     }
 
     factor(): ASTNode {
-        // factor :  INTEGER | LPAREN expr RPAREN
+        // factor :  (PLUS | MINUS)factor | INTEGER | LPAREN expr RPAREN
         const token = this.currentToken
         switch(token.type) {
+            case PLUS:
+                this.eat(PLUS)
+                return new UnaryOp(token, this.factor())
+            case MINUS:
+                this.eat(MINUS)
+                return new UnaryOp(token, this.factor())
             case INTEGER:
                 this.eat(INTEGER)
                 return new Num(token)
