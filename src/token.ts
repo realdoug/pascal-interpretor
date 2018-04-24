@@ -1,6 +1,19 @@
-export const [
-    INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF
-] = ['INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', '(', ')', 'EOF'];
+export const tokens = {
+    INTEGER: 'INTEGER',
+    PLUS: 'PLUS',
+    MINUS: 'MINUS',
+    MUL: 'MUL',
+    DIV: 'DIV',
+    LPAREN: '(',
+    RPAREN: ')',
+    EOF: 'EOF',
+    BEGIN: 'BEGIN',
+    END: 'END',
+    DOT: 'DOT',
+    ID: 'ID',
+    SEMI: ';',
+    ASSIGN: ':='
+}
 
 export default class Token {
     type: string

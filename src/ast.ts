@@ -39,3 +39,33 @@ export class Num extends ASTNode {
         this.value = token.value
     }
 }
+
+export class Compound extends ASTNode {
+    children: ASTNode[]
+}
+
+export class Var extends ASTNode {
+    token: Token
+    value: any    
+
+    constructor(token: Token) {
+        super()
+        this.token = token
+    }
+}
+
+export class Assign extends ASTNode {
+    left: Var
+    right: ASTNode
+    op: Token
+
+    constructor(left: Var, right: ASTNode, op: Token) {
+        super()
+        this.left = left
+        this.right = right
+        this.op = op
+    }
+}
+
+export class NoOp extends ASTNode {
+}

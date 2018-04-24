@@ -1,8 +1,11 @@
-import Token, {
-    INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF
-} from './token'
+import Token, { tokens } from './token'
+const { 
+    INTEGER, PLUS, MINUS, MUL, DIV, 
+    LPAREN, RPAREN, EOF, DOT, BEGIN, END,
+    SEMI, ID, ASSIGN
+} = tokens
 import Lexer from './lexer'
-import { Num, BinaryOp, ASTNode, UnaryOp } from './ast';
+import { Num, BinaryOp, ASTNode, UnaryOp, Compound, NoOp, Var, Assign } from './ast';
 
 export default class Parser {
     currentToken: Token
@@ -25,8 +28,79 @@ export default class Parser {
         }
     }
 
+    program(): ASTNode {
+        // program : compound_statement DOT
+        const node = this.compoundStatement()
+        this.eat(DOT)
+        return node
+    }
+
+    compoundStatement(): ASTNode {
+        // compound_statement : BEGIN statement_list END
+        this.eat(BEGIN)
+        const nodes = this.statementList()
+        this.eat(END)
+
+        const root = new Compound()
+        root.children = nodes
+
+        return root
+    }
+
+    statementList(): ASTNode[] {
+        // statement_list : statement | statement SEMI statement_list
+        const node = this.statement()
+        const results = [node]
+        while(this.currentToken.type === SEMI) {
+            this.eat(SEMI)
+            results.push(this.statement())
+        }
+
+        if(this.currentToken.type === ID)
+            this.error();
+        
+        return results
+    }
+
+    statement(): ASTNode {
+        // statement : compount_statement | assignment_statement | empty
+        let node;
+        switch(this.currentToken.type) {
+            case BEGIN:
+                node = this.compoundStatement();
+                break;
+            case ID:
+                node = this.assignmentStatement();
+                break;
+            default:
+                node = this.empty()
+        } 
+
+        return node
+    }
+
+    assignmentStatement(): ASTNode {
+        // assignment_statement : variable ASSIGN expr
+        const left = this.variable()
+        const token = this.currentToken
+        this.eat(ASSIGN)
+        const right = this.expr()
+        return new Assign(left, right, token)
+    }
+
+    variable(): Var {
+        // variable : ID
+        const node = new Var(this.currentToken)
+        this.eat(ID)
+        return node
+    }
+
+    empty(): ASTNode {
+        return new NoOp()
+    }
+
     factor(): ASTNode {
-        // factor :  (PLUS | MINUS)factor | INTEGER | LPAREN expr RPAREN
+        // factor :  (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | VARIABLE
         const token = this.currentToken
         switch(token.type) {
             case PLUS:
@@ -43,6 +117,8 @@ export default class Parser {
                 const node = this.expr()
                 this.eat(RPAREN)
                 return node
+            default: 
+                return this.variable()
         }
     }
 
@@ -85,6 +161,10 @@ export default class Parser {
     }
 
     parse(): ASTNode {
-        return this.expr()
+        const p = this.program()
+        if(this.currentToken.type !== EOF)
+            this.error();
+        return p
+        // return this.expr()
     }
 }

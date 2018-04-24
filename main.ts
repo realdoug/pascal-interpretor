@@ -15,9 +15,9 @@ function main() {
         const lexer = new Lexer(inp)
         const parser = new Parser(lexer)
         const interpreter = new Interpreter(parser)
-        const result = interpreter.run()
+        interpreter.run()
 
-        console.log(result)
+        console.log(interpreter.GLOBALSCOPE)
         rl.prompt()
     })
 }

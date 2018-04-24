@@ -1,15 +1,22 @@
-import Token, {
-    INTEGER, PLUS, MINUS, MUL, DIV, EOF
-} from './token'
+import Token, { tokens } from './token'
+const { 
+    INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF 
+} = tokens
 import Lexer from './lexer'
 import Parser from './parser'
-import { ASTNode, BinaryOp, UnaryOp, Num } from './ast'
+import { 
+    ASTNode, BinaryOp, UnaryOp, 
+    Num, NoOp, Compound, Assign,
+    Var
+} from './ast'
 
 export default class Interpreter {
     parser: Parser
+    GLOBALSCOPE: {}
 
     constructor(parser: Parser) {
         this.parser = parser
+        this.GLOBALSCOPE = {}
     }
 
     visit(node: ASTNode) {
@@ -49,6 +56,27 @@ export default class Interpreter {
 
     visit_Num(node: Num) {
         return node.value
+    }
+
+    visit_Compound(node: Compound) {
+        node.children.forEach( n => this.visit(n))
+    }
+
+    visit_Assign(node: Assign) {
+        const varName = node.left.token.value
+        this.GLOBALSCOPE[varName] = this.visit(node.right)
+    }
+
+    visit_Var(node: Var) {
+        const varName = node.value
+        const val = this.GLOBALSCOPE[varName]
+        if(val === null || val === undefined)
+            throw `Name Error: ${varName}`;
+     
+        return val
+    }
+
+    visit_NoOp(node: NoOp) {
     }
 
     run(): number {
