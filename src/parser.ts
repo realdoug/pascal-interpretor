@@ -30,7 +30,7 @@ export default class Parser {
         if (this.currentToken.type === tokenType) {
             this.currentToken = this.lexer.getNextToken()
         } else {
-            this.error()
+            throw `EAT ERROR. expected ${tokenType} found ${this.currentToken.type}`
         }
     }
 
@@ -99,7 +99,7 @@ export default class Parser {
         this.eat(BEGIN)
         const nodes = this.statementList()
         this.eat(END)
-
+        
         const root = new Compound()
         root.children = nodes
 
@@ -175,8 +175,8 @@ export default class Parser {
             case INTEGER_CONST:
                 this.eat(INTEGER_CONST)
                 return new Num(token)
-            case INTEGER_CONST:
-                this.eat(INTEGER_CONST)
+            case REAL_CONST:
+                this.eat(REAL_CONST)
                 return new Num(token)
             case LPAREN:
                 this.eat(LPAREN)
@@ -232,6 +232,5 @@ export default class Parser {
         if (this.currentToken.type !== EOF)
             this.error();
         return p
-        // return this.expr()
     }
 }

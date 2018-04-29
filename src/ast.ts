@@ -93,6 +93,7 @@ export class Var extends ASTNode {
     constructor(token: Token) {
         super()
         this.token = token
+        this.value = token.value
     }
 }
 
