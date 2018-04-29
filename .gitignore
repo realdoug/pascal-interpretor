@@ -1,6 +1,8 @@
 # Visual Studio 2015 cache/options directory
 .vscode/
 node_modules/
+TODO
+*.pas
 
 #Exclude tsc generated files
 *.map

@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const run = require('../build/main').run;
+
+const fname = process.argv[2];
+fs.readFile(fname, 'utf8', (err, code) => {
+    if (err) console.log(err);
+    run(code);
+});

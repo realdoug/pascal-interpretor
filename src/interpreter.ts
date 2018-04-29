@@ -1,13 +1,14 @@
 import Token, { tokens } from './token'
-const { 
-    INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, EOF 
+const {
+    PLUS, MINUS, MUL, INTEGER_DIV, FLOAT_DIV,
+    LPAREN, RPAREN, EOF
 } = tokens
 import Lexer from './lexer'
 import Parser from './parser'
-import { 
-    ASTNode, BinaryOp, UnaryOp, 
+import {
+    ASTNode, BinaryOp, UnaryOp,
     Num, NoOp, Compound, Assign,
-    Var
+    Var, Program, Block, VarDecl, Type
 } from './ast'
 
 export default class Interpreter {
@@ -27,6 +28,22 @@ export default class Interpreter {
         } else {
             throw `No method implemented: ${methodName}`
         }
+    }
+
+    visit_Program(node: Program) {
+        this.visit(node.block)
+    }
+
+    visit_Block(node: Block) {
+        const visit = this.visit.bind(this)
+        node.declarations.forEach(dec => visit(dec))
+        visit(node.compoundStatement)
+    }
+
+    visit_VarDecl(node: VarDecl){
+    }
+
+    visit_Type(node: Type){
     }
 
     visit_UnaryOp(node: UnaryOp) {
@@ -49,7 +66,9 @@ export default class Interpreter {
                 return visit(node.left) - visit(node.right)
             case MUL:
                 return visit(node.left) * visit(node.right)
-            case DIV:
+            case INTEGER_DIV:
+                return visit(node.left) / visit(node.right)
+            case FLOAT_DIV:
                 return visit(node.left) / visit(node.right)
         }
     }
@@ -59,7 +78,7 @@ export default class Interpreter {
     }
 
     visit_Compound(node: Compound) {
-        node.children.forEach( n => this.visit(n))
+        node.children.forEach(n => this.visit(n))
     }
 
     visit_Assign(node: Assign) {
@@ -70,9 +89,9 @@ export default class Interpreter {
     visit_Var(node: Var) {
         const varName = node.value
         const val = this.GLOBALSCOPE[varName]
-        if(val === null || val === undefined)
+        if (val === null || val === undefined)
             throw `Name Error: ${varName}`;
-     
+
         return val
     }
 

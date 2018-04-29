@@ -1,14 +1,20 @@
 import Token, { tokens } from './token'
 const {
-    INTEGER, PLUS, MINUS, MUL, DIV,
-    LPAREN, RPAREN, EOF, BEGIN, END, ID,
-    ASSIGN, SEMI, DOT
+    INTEGER_CONST, PLUS, MINUS, MUL, INTEGER_DIV,
+    FLOAT_DIV, LPAREN, RPAREN, EOF, BEGIN, END, ID,
+    ASSIGN, SEMI, DOT, REAL_CONST, COLON, COMMA,
+    VAR, PROGRAM, REAL, INTEGER
 } = tokens
-import { isAlnum, isAlpha, isDigit } from './util'
+import { isAlnum, isAlpha } from './util'
 
 const reserved = {
     'BEGIN': new Token(BEGIN, 'BEGIN'),
-    'END': new Token(END, 'END')
+    'END': new Token(END, 'END'),
+    'PROGRAM': new Token(PROGRAM, 'PROGRAM'),
+    'VAR': new Token(VAR, 'VAR'),
+    'REAL': new Token(REAL, 'REAL'),
+    'DIV': new Token(INTEGER_DIV, 'DIV'),
+    'INTEGER': new Token(INTEGER, 'INTEGER')
 }
 
 function isWhitespace(str) {
@@ -46,13 +52,29 @@ export default class Lexer {
         }
     }
 
-    integer(): number {
+    skipComment() {
+        while (this.currentChar !== '}') {
+            this.advance()
+        }
+        this.advance()
+    }
+
+    number(): Token {
         let result = ''
-        while (this.currentChar !== null && !isNaN(parseInt(this.currentChar))) {
+        let isFloat = false
+        while (
+            this.currentChar !== null &&
+            (!isNaN(parseInt(this.currentChar)) || this.currentChar === '.')
+        ) {
+            if (this.currentChar === '.') isFloat = true;
             result += this.currentChar
             this.advance()
         }
-        return parseInt(result)
+
+        return isFloat ?
+            new Token(REAL_CONST, parseFloat(result)) :
+            new Token(INTEGER_CONST, parseInt(result))
+
     }
 
     identifier() {
@@ -84,8 +106,14 @@ export default class Lexer {
                 continue
             }
 
+            if (this.currentChar === '{') {
+                this.advance()
+                this.skipComment()
+                continue
+            }
+
             if (this.currentChar !== null && !isNaN(parseInt(this.currentChar)))
-                return new Token(INTEGER, this.integer())
+                return this.number()
 
             if (isAlpha(this.currentChar))
                 return this.identifier()
@@ -96,8 +124,14 @@ export default class Lexer {
                 return new Token(ASSIGN, ':=')
             }
 
+            if (this.currentChar === ':') 
+                return this.singleCharToken(COLON, ':')
+
+            if (this.currentChar === ',') 
+                return this.singleCharToken(COMMA, ',')
+
             if (this.currentChar === '+')
-                return this.singleCharToken(PLUS, '+');
+                return this.singleCharToken(PLUS, '+')
 
             if (this.currentChar === '-')
                 return this.singleCharToken(MINUS, '-')
@@ -106,7 +140,7 @@ export default class Lexer {
                 return this.singleCharToken(MUL, '*')
 
             if (this.currentChar === '/')
-                return this.singleCharToken(DIV, '/')
+                return this.singleCharToken(FLOAT_DIV, '/')
 
             if (this.currentChar === '(')
                 return this.singleCharToken(LPAREN, '(')

@@ -1,18 +1,26 @@
 export const tokens = {
     INTEGER: 'INTEGER',
+    REAL: 'REAL',
+    INTEGER_CONST: 'INTEGER_CONST',
+    REAL_CONST: 'REAL_CONST',
     PLUS: 'PLUS',
     MINUS: 'MINUS',
     MUL: 'MUL',
-    DIV: 'DIV',
-    LPAREN: '(',
-    RPAREN: ')',
+    INTEGER_DIV: 'INTEGER_DIV',
+    FLOAT_DIV: 'FLOAT_DIV',
+    LPAREN: 'LPAREN',
+    RPAREN: 'RPAREN',
     EOF: 'EOF',
     BEGIN: 'BEGIN',
     END: 'END',
     DOT: 'DOT',
     ID: 'ID',
-    SEMI: ';',
-    ASSIGN: ':='
+    SEMI: 'SEMI',
+    ASSIGN: 'ASSIGN',
+    COLON: 'COLON',
+    COMMA: 'COMMA',
+    VAR: 'VAR',
+    PROGRAM: 'PROGRAM'
 }
 
 export default class Token {

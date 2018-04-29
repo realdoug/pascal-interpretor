@@ -6,9 +6,9 @@ export class InterpreterFixture {
   @Test()
   public IntegerTest() {
     const lex = new Lexer("1000")
-    const result = lex.integer()
+    const result = lex.number()
 
-    Expect(result).toBe(1000);
+    Expect(result.value).toBe(1000);
   }
 
   @Test()

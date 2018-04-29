@@ -1,11 +1,17 @@
 import Token, { tokens } from './token'
-const { 
-    INTEGER, PLUS, MINUS, MUL, DIV, 
-    LPAREN, RPAREN, EOF, DOT, BEGIN, END,
-    SEMI, ID, ASSIGN
+const {
+    INTEGER_CONST, REAL_CONST, PLUS, MINUS,
+    MUL, INTEGER_DIV, FLOAT_DIV, LPAREN,
+    RPAREN, EOF, DOT, BEGIN, END, SEMI, ID,
+    ASSIGN, VAR, COMMA, COLON, PROGRAM, INTEGER,
+    REAL
 } = tokens
 import Lexer from './lexer'
-import { Num, BinaryOp, ASTNode, UnaryOp, Compound, NoOp, Var, Assign } from './ast';
+import {
+    Num, BinaryOp, ASTNode, UnaryOp,
+    Compound, NoOp, Var, Assign,
+    Block, Type, VarDecl, Program
+} from './ast';
 
 export default class Parser {
     currentToken: Token
@@ -29,10 +35,63 @@ export default class Parser {
     }
 
     program(): ASTNode {
-        // program : compound_statement DOT
-        const node = this.compoundStatement()
+        // program : PROGRAM variable SEMI block DOT
+        this.eat(PROGRAM)
+        const name = this.variable()
+        this.eat(SEMI)
+        const block = this.block()
+        const node = new Program(name.value, block)
         this.eat(DOT)
         return node
+    }
+
+    block(): ASTNode {
+        // block : declarations compound_statement
+        const declarationNodes = this.declarations()
+        const compoundStatementNode = this.compoundStatement()
+        return new Block(declarationNodes, compoundStatementNode)
+    }
+
+    declarations(): ASTNode[] {
+        // declarations : VAR (variable_decl SEMI)+ | empty
+        let declarations = []
+        if (this.currentToken.type === VAR) {
+            this.eat(VAR)
+            while (this.currentToken.type === ID) {
+                const varDec = this.variableDeclaration()
+                declarations = declarations.concat(varDec)
+                this.eat(SEMI)
+            }
+        }
+
+        return declarations
+    }
+
+    variableDeclaration(): ASTNode[] {
+        // variable_decl : ID (COMMA ID)* COLON type_spec
+        const nodes = [new Var(this.currentToken)]
+        this.eat(ID)
+        while (this.currentToken.type === COMMA) {
+            this.eat(COMMA)
+            nodes.push(new Var(this.currentToken))
+            this.eat(ID)
+        }
+
+        this.eat(COLON)
+        const typeSpec = this.typeSpec()
+        return nodes.map(n => new VarDecl(n, typeSpec))
+    }
+
+    typeSpec(): ASTNode {
+        // type_spec : INTEGER | REAL
+        const token = this.currentToken
+        if (token.type === INTEGER) {
+            this.eat(INTEGER)
+        } else {
+            this.eat(REAL)
+        }
+
+        return new Type(token)
     }
 
     compoundStatement(): ASTNode {
@@ -51,21 +110,21 @@ export default class Parser {
         // statement_list : statement | statement SEMI statement_list
         const node = this.statement()
         const results = [node]
-        while(this.currentToken.type === SEMI) {
+        while (this.currentToken.type === SEMI) {
             this.eat(SEMI)
             results.push(this.statement())
         }
 
-        if(this.currentToken.type === ID)
+        if (this.currentToken.type === ID)
             this.error();
-        
+
         return results
     }
 
     statement(): ASTNode {
         // statement : compount_statement | assignment_statement | empty
         let node;
-        switch(this.currentToken.type) {
+        switch (this.currentToken.type) {
             case BEGIN:
                 node = this.compoundStatement();
                 break;
@@ -74,7 +133,7 @@ export default class Parser {
                 break;
             default:
                 node = this.empty()
-        } 
+        }
 
         return node
     }
@@ -100,42 +159,50 @@ export default class Parser {
     }
 
     factor(): ASTNode {
-        // factor :  (PLUS | MINUS) factor | INTEGER | LPAREN expr RPAREN | VARIABLE
+        /* factor :  (PLUS | MINUS) factor 
+                   | INTEGER_CONST 
+                   | REAL_CONST
+                   | LPAREN expr RPAREN 
+                   | variable */
         const token = this.currentToken
-        switch(token.type) {
+        switch (token.type) {
             case PLUS:
                 this.eat(PLUS)
                 return new UnaryOp(token, this.factor())
             case MINUS:
                 this.eat(MINUS)
                 return new UnaryOp(token, this.factor())
-            case INTEGER:
-                this.eat(INTEGER)
+            case INTEGER_CONST:
+                this.eat(INTEGER_CONST)
+                return new Num(token)
+            case INTEGER_CONST:
+                this.eat(INTEGER_CONST)
                 return new Num(token)
             case LPAREN:
                 this.eat(LPAREN)
                 const node = this.expr()
                 this.eat(RPAREN)
                 return node
-            default: 
+            default:
                 return this.variable()
         }
     }
 
     term(): ASTNode {
-        // term : factor ((MUL | DIV) factor)*
+        // term : factor ((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
         let node = this.factor()
 
-        while ([MUL, DIV].indexOf(this.currentToken.type) > -1) {
+        while ([MUL, FLOAT_DIV, INTEGER_DIV].indexOf(this.currentToken.type) > -1) {
             const token = this.currentToken
-            switch(token.type){
+            switch (token.type) {
                 case MUL:
                     this.eat(MUL); break;
-                case DIV:
-                    this.eat(DIV); break;
+                case INTEGER_DIV:
+                    this.eat(INTEGER_DIV); break;
+                case FLOAT_DIV:
+                    this.eat(FLOAT_DIV); break;
             }
             node = new BinaryOp(node, token, this.factor())
-
         }
 
         return node
@@ -148,12 +215,12 @@ export default class Parser {
         let node = this.term()
         while ([PLUS, MINUS].indexOf(this.currentToken.type) > -1) {
             const token = this.currentToken
-            switch(token.type){
+            switch (token.type) {
                 case PLUS:
                     this.eat(PLUS); break;
                 case MINUS:
                     this.eat(MINUS); break;
-            } 
+            }
 
             node = new BinaryOp(node, token, this.term())
         }
@@ -162,7 +229,7 @@ export default class Parser {
 
     parse(): ASTNode {
         const p = this.program()
-        if(this.currentToken.type !== EOF)
+        if (this.currentToken.type !== EOF)
             this.error();
         return p
         // return this.expr()

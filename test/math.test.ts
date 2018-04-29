@@ -2,7 +2,7 @@ import { Expect, Test } from "alsatian"
 import { interpret } from './helpers'
 
 function compute(expression) {
-  const program = `BEGIN foo := ${expression} END.`
+  const program = `PROGRAM test; BEGIN foo := ${expression} END.`
   return interpret(program).GLOBALSCOPE['foo']
 }
 
